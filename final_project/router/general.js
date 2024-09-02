@@ -28,23 +28,26 @@ public_users.get('/', function (req, res) {
         resolve(books);
     })
     .then((bookList) => {
-        res.send(JSON.stringify(bookList, null, 4));
+        res.send("Book is not Found");
     })
     .catch((error) => {
         res.status(500).json({ message: 'Error retrieving book list', error });
     });
 });
 
-// Get book details based on ISBN
+// Get book details based on ISBN using Promises
 public_users.get('/isbn/:isbn',function (req, res) {
     let isbn = req.params.isbn; // Get ISBN from request parameters
     let book = books[isbn]; // Find the book by ISBN
-
-    if (book) {
-        res.json(book); // Send the book details as JSON
-    } else {
-        res.status(404).send('Book not found'); // Handle case where book is not found
-    }
+    new Promise((resolve, reject) => {
+        resolve(book);
+    })
+    .then((bookList) => {
+        res.send(JSON.stringify(bookList, null, 4));
+    })
+    .catch((error) => {
+        res.status(500).json({ message: 'Error retrieving book list', error });
+    });
  });
   
 // Get book details based on author
