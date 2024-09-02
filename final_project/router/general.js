@@ -28,7 +28,7 @@ public_users.get('/', function (req, res) {
         resolve(books);
     })
     .then((bookList) => {
-        res.send("Book is not Found");
+        res.send(JSON.stringify(bookList, null, 4));
     })
     .catch((error) => {
         res.status(500).json({ message: 'Error retrieving book list', error });
@@ -83,22 +83,36 @@ public_users.get('/author/:author', function (req, res) {
 });
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
-  const title = req.params.title.toLowerCase();
-  let result = [];
+public_users.get('/title/:title', (req, res) => {
+    const title = req.params.title.toLowerCase();
 
-  // Iterate through the books object to find matching titles
-  for (const key in books) {
-      if (books[key].title.toLowerCase().includes(title)) {
-          result.push(books[key]);
-      }
-  }
+    // Create a new Promise to handle the async operation
+    new Promise((resolve, reject) => {
+        // Simulate async behavior with setTimeout
+        setTimeout(() => {
+            const result = [];
 
-  if (result.length > 0) {
-      res.json(result);
-  } else {
-      res.status(404).json({ message: 'No books found with the given title.' });
-  }
+            // Iterate through the books and find matching titles
+            for (const key in books) {
+                if (books[key].title.toLowerCase().includes(title)) {
+                    result.push(books[key]);
+                }
+            }
+
+            if (result.length > 0) {
+                resolve(result);
+            } else {
+                reject(new Error('No books found with the given title.'));
+            }
+        }, 100); // Simulate delay
+    })
+    .then(booksByTitle => {
+        res.json(booksByTitle);
+    })
+    .catch(error => {
+        console.error('Error fetching books by title:', error); // Log detailed error info
+        res.status(404).json({ message: 'Error fetching books by title', error: error.message });
+    });
 });
 
 //  Get book review
