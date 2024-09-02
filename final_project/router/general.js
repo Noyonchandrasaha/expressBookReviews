@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios'); 
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -21,10 +22,17 @@ public_users.post("/register", (req, res) => {
     }
 });
 
-// Get the book list available in the shop
-public_users.get('/',function (req, res) {
-  //Answer of the task 1 is:
-  res.send(JSON.stringify(books, null, 4));
+// Get the book list available in the shop using Promises
+public_users.get('/', function (req, res) {
+    new Promise((resolve, reject) => {
+        resolve(books);
+    })
+    .then((bookList) => {
+        res.send(JSON.stringify(bookList, null, 4));
+    })
+    .catch((error) => {
+        res.status(500).json({ message: 'Error retrieving book list', error });
+    });
 });
 
 // Get book details based on ISBN
