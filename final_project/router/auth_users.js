@@ -5,27 +5,38 @@ const regd_users = express.Router();
 
 let users = [];
 const JWT_SECRET = 'fingerprint_customer';
-const isValid = (username)=>{ //returns boolean
-// Check if username is non-empty and unique
+// Check if the username is valid
+const isValid = (username) => {
     return username && username.trim().length > 0 && !users.some(user => user.username === username);
 }
 
-const authenticatedUser = (username,password)=>{ //returns boolean
+// Authenticate user
+const authenticatedUser = (username, password) => {
     return users.some(user => user.username === username && user.password === password);
 }
 
-//only registered users can login
-regd_users.post("/login", (req,res) => {
+// Middleware to authenticate JWT token
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null) return res.sendStatus(401); // If no token is provided
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403); // If token is invalid
+        req.user = user;
+        next();
+    });
+}
+
+// Only registered users can login
+regd_users.post("/login", (req, res) => {
     const { username, password } = req.body;
 
-    // Check for missing username or password
     if (!username || !password) {
         return res.status(400).json({ message: 'Username and password are required.' });
     }
 
-    // Authenticate user
     if (authenticatedUser(username, password)) {
-        // Generate JWT token
         const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '1h' });
         res.status(200).json({ token });
     } else {
@@ -33,15 +44,28 @@ regd_users.post("/login", (req,res) => {
     }
 });
 
-// Add a book review (placeholder for future implementation)
-regd_users.put("/auth/review/:isbn", (req, res) => {
-    return res.status(300).json({ message: "Yet to be implemented" });
-});
+// Add or modify a book review
+regd_users.put("/review/:isbn", authenticateToken, (req, res) => {
+    const { isbn } = req.params;
+    const { review } = req.body;
+    const username = req.user.username;
 
-// Add a book review
-regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+    if (!review) {
+        return res.status(400).json({ message: 'Review is required.' });
+    }
+
+    if (!books[isbn]) {
+        return res.status(404).json({ message: 'Book not found.' });
+    }
+
+    // Add or modify the review
+    if (!books[isbn].reviews[username]) {
+        books[isbn].reviews[username] = review;
+        return res.status(201).json({ message: 'Review added.' });
+    } else {
+        books[isbn].reviews[username] = review;
+        return res.status(200).json({ message: 'Review updated.' });
+    }
 });
 
 module.exports.authenticated = regd_users;
