@@ -51,22 +51,35 @@ public_users.get('/isbn/:isbn',function (req, res) {
  });
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
-    const author = req.params.author;
-    const result = [];
+public_users.get('/author/:author', function (req, res) {
+    const author = req.params.author.toLowerCase();
 
-    // Iterate through the books and find the ones by the given author
-    for (let key in books) {
-        if (books[key].author.toLowerCase() === author.toLowerCase()) {
-            result.push(books[key]);
-        }
-    }
+    new Promise((resolve, reject) => {
+        // Simulate a delay or async operation (e.g., database query) if needed
+        setTimeout(() => {
+            const result = [];
 
-    if (result.length > 0) {
-        res.json(result);
-    } else {
-        res.status(404).send('No books found for the given author.');
-    }
+            // Iterate through the books and find the ones by the given author
+            for (let key in books) {
+                if (books[key].author.toLowerCase() === author) {
+                    result.push(books[key]);
+                }
+            }
+
+            if (result.length > 0) {
+                resolve(result);
+            } else {
+                reject(new Error('No books found for the given author.'));
+            }
+        }, 100); // Simulate a small delay
+    })
+    .then(booksByAuthor => {
+        res.json(booksByAuthor);
+    })
+    .catch(error => {
+        console.error('Error fetching books by author:', error); // Logs detailed error info
+        res.status(404).json({ message: 'Error fetching books by author', error: error.message });
+    });
 });
 
 // Get all books based on title
